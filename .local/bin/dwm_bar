@@ -1,0 +1,104 @@
+#!/bin/env sh
+
+# INIT
+printf "$$" > ~/.cache/pidofbar
+sec=0
+
+update_memory () { 
+	memory="$(free -h | sed -n "2s/\([^ ]* *\)\{2\}\([^ ]*\).*/\2/p")"
+}
+
+update_time () { 
+	time="$(date "+[  %a %d %b ] [  %I:%M %P ]")" 
+}
+
+update_bat () { 
+	# you might need to change the path depending on your device
+	read -r bat_status </sys/class/power_supply/BAT0/status
+	read -r bat_capacity </sys/class/power_supply/BAT0/capacity
+	if [ "$bat_status" = "Charging" ]; then
+		bat_status=""
+	elif [ "$bat_capacity" -gt 80 ]; then
+		bat_status=""
+	elif [ "$bat_capacity" -gt 60 ]; then
+		bat_status=""
+	elif [ "$bat_capacity" -gt 40 ]; then
+		bat_status=""
+	elif [ "$bat_capacity" -gt 20 ]; then
+		bat_status=""
+	else 
+		bat_status=""
+	fi
+	bat="$bat_status  $bat_capacity%"
+}
+
+update_vol () { 
+	vol="$([ "$(pamixer --get-mute)" = "false" ] && printf ' ' || printf ' ')$(pamixer --get-volume)%"
+}
+
+update_cpu () {
+	cpu=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | sed 's/%us//')%	
+}
+update_cpufreq (){
+	cpufq="$(awk -F: '/MHz/ {sum += $2; count++} END {if (count > 0) printf "%.2f\n", sum / (count * 1000)}' /proc/cpuinfo) GHz"
+}
+
+update_cpu_fan (){
+	cpuf=$(sensors | grep cpu_fan | awk '{print $2}')
+}
+
+update_nrltsp(){
+	update() {
+    		sum=0
+    		for arg; do
+        		read -r i < "$arg"
+        		sum=$(( sum + i ))
+    		done
+    		cache=/tmp/${1##*/}
+    		[ -f "$cache" ] && read -r old < "$cache" || old=0
+    		printf %d\\n "$sum" > "$cache"
+    		printf %d\\n $(( sum - old ))
+}
+
+rx=$(update /sys/class/net/[ew]*/statistics/rx_bytes)
+tx=$(update /sys/class/net/[ew]*/statistics/tx_bytes)
+
+nrltsp=$(printf "%4sB %4sB\\n" $(numfmt --to=iec $rx $tx))
+
+}
+# We have to run this only once.
+
+display () { 
+	xsetroot -name "[ $nrltsp  ] [  $cpufq ] [ $cpuf ][  $memory ] [ $vol ] $time [ $bat ]"
+}
+
+
+
+
+
+# Handling receiving signal
+# RTMIN = 34 (always)
+trap	"update_vol;display"	"RTMIN"
+
+## kill -m "$(cat ~/.cache/pidofbar)"
+# where m = 34 + n
+
+while true
+do
+	sleep 1 &
+  wait && { 
+		# to update item ever n seconds with a offset of m
+		## [ $((sec % n)) -eq m ] && udpate_item
+		[ $((sec % 1 )) -eq 0 ] && update_nrltsp
+		[ $((sec % 5 )) -eq 0 ] && update_time
+		[ $((sec % 15)) -eq 0 ] && update_memory
+		[ $((sec % 5 )) -eq 0 ] && update_vol
+                [ $((sec % 5 )) -eq 0 ] && update_bat
+		[ $((sec % 5 )) -eq 0 ] && update_cpu_fan
+		[ $((sec % 5 )) -eq 0 ] && update_cpufreq
+		# how often the display updates ( 5 seconds )
+		[ $((sec % 5 )) -eq 0 ] && display
+
+		sec=$((sec + 1))
+	}
+done
