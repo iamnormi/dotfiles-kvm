@@ -98,7 +98,7 @@ do
 		[ $((sec % 5 )) -eq 0 ] && update_time
 		[ $((sec % 15)) -eq 0 ] && update_memory
 		[ $((sec % 5 )) -eq 0 ] && update_vol
-                [ $((sec % 5 )) -eq 0 ] && update_bat
+                #[ $((sec % 5 )) -eq 0 ] && update_bat
 		#[ $((sec % 5 )) -eq 0 ] && update_cpu_fan
 		[ $((sec % 5 )) -eq 0 ] && update_cpu
 		# how often the display updates ( 5 seconds )
