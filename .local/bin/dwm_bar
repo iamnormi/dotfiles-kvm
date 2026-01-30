@@ -68,11 +68,16 @@ nrltsp=$(printf "%4sB %4sB\\n" $(numfmt --to=iec $rx $tx))
 }
 # We have to run this only once.
 
+# OLD
+
+#display () { 
+#	xsetroot -name "[ $nrltsp  ] [  $cpufq ] [ $cpuf ][  $memory ] [ $vol ] $time [ $bat ]"
+#}
+
+# NEW
 display () { 
-	xsetroot -name "[ $nrltsp  ] [  $cpufq ] [ $cpuf ][  $memory ] [ $vol ] $time [ $bat ]"
+	xsetroot -name "[ $nrltsp  ][  $cpu ][  $memory ][ $vol ]$time"
 }
-
-
 
 
 
@@ -94,8 +99,8 @@ do
 		[ $((sec % 15)) -eq 0 ] && update_memory
 		[ $((sec % 5 )) -eq 0 ] && update_vol
                 [ $((sec % 5 )) -eq 0 ] && update_bat
-		[ $((sec % 5 )) -eq 0 ] && update_cpu_fan
-		[ $((sec % 5 )) -eq 0 ] && update_cpufreq
+		#[ $((sec % 5 )) -eq 0 ] && update_cpu_fan
+		[ $((sec % 5 )) -eq 0 ] && update_cpu
 		# how often the display updates ( 5 seconds )
 		[ $((sec % 5 )) -eq 0 ] && display
 
